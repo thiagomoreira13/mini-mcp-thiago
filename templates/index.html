@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini MCP Server Tester</title>
+  <style>
+    body { font-family: sans-serif; max-width: 700px; margin: auto; padding: 2rem; }
+    input, textarea, select, button { display: block; width: 100%; margin: 1rem 0; padding: 0.5rem; }
+    pre { background: #eee; padding: 1rem; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Mini MCP Server Tester</h1>
+
+  <label>1. MCP Server URL</label>
+  <input type="text" id="serverUrl" placeholder="https://your-mcp-server.com">
+  <button onclick="fetchTools()">Register & List Tools</button>
+
+  <label>2. Select Tool</label>
+  <select id="toolList"></select>
+
+  <label>3. Tool Input (JSON)</label>
+  <textarea id="inputArgs" rows="5">{}</textarea>
+
+  <label>4. Iterations</label>
+  <input type="number" id="iterations" value="5">
+
+  <button onclick="runTest()">Run Test</button>
+
+  <h2>Results</h2>
+  <pre id="results"></pre>
+
+  <script>
+    let currentServerUrl = '';
+
+    async function fetchTools() {
+      const url = document.getElementById('serverUrl').value;
+      currentServerUrl = url;
+
+      const res = await fetch(`/tools?url=${encodeURIComponent(url)}`);
+      const tools = await res.json();
+      const toolList = document.getElementById('toolList');
+      toolList.innerHTML = '';
+
+      console.log(JSON.stringify(tools));
+      
+      tools.forEach(tool => {
+        const option = document.createElement('option');
+        option.value = tool.name;
+        option.textContent = tool.name;
+        toolList.appendChild(option);
+      });
+    }
+
+    async function runTest() {
+      const toolName = document.getElementById('toolList').value;
+      const inputText = document.getElementById('inputArgs').value;
+      const iterations = document.getElementById('iterations').value;
+
+      const payload = {
+        url: currentServerUrl,
+        tool_name: toolName,
+        input: JSON.parse(inputText),
+        iterations: iterations
+      };
+
+      const res = await fetch('/run-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      document.getElementById('results').textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
